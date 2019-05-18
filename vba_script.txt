@@ -1,0 +1,160 @@
+Sub stocktracker()
+Dim lastrow As Long, lastrowticker As Long, tickerlist As Object, rng As Range, i As Integer, h As Long, tixitems() As Variant, openprice As Double
+Dim closeprice As Double, nomchange As Double, percentchange As Double, x As Double, stockvolume As Double, m As Long
+Dim highpercent As Double, highperctick As String, lowpercent As Double, lowperctick As String, highvol As Double, highvoltick As String
+Dim ws As Worksheet
+
+Application.ScreenUpdating = False
+
+'make loop that goes through each worksheet
+
+For Each ws In ActiveWorkbook.Worksheets
+    ws.Activate
+'Format new table
+Range("I1").Value = "Ticker"
+Range("J1").Value = "Yearly Change"
+Range("K1").Value = "Percent Change"
+Range("L1").Value = "Total Stock Volume"
+
+'make dictionary object and get how many rows in spreedsheet
+Set tickerlist = CreateObject("Scripting.Dictionary")
+lastrow = Cells(Rows.Count, "A").End(xlUp).Row
+'write each non duplicate ticker into dictionary object
+For Each rng In Range("A2:A" & lastrow)
+  
+  If Not tickerlist.Exists(rng.Value) Then tickerlist.Add rng.Value, Nothing
+    
+Next rng
+
+tixitems() = tickerlist.keys
+
+
+'write stock initials into column i
+For i = 0 To tickerlist.Count - 1
+    Cells(i + 2, 9).Value = tixitems(i)
+    
+    Next i
+    
+lastrowticker = Cells(Rows.Count, "I").End(xlUp).Row
+'write yearly change, percentage change, and stock volume into column j & k & l
+For h = 0 To tickerlist.Count - 1
+    stockvolume = 0
+    For m = 2 To lastrow
+    Do While Range("A" & m).Value = tixitems(h)
+        If Not tixitems(h) = Range("A" & m - 1).Value Then
+            openprice = Range("C" & m).Value
+            stockvolume = stockvolume + Cells(m, 7).Value
+            Debug.Print stockvolume
+            Exit Do
+        ElseIf Not tixitems(h) = Range("A" & m + 1).Value Then
+            closeprice = Range("F" & m).Value
+            stockvolume = stockvolume + Cells(m, 7).Value
+            Debug.Print stockvolume
+            Exit For
+        ElseIf Range("A" & m).Value = tixitems(h) Then
+            stockvolume = stockvolume + Cells(m, 7).Value
+            Debug.Print stockvolume
+            Exit Do
+        End If
+    Loop
+     Next m
+    
+       If Not openprice = 0 Then
+        nomchange = closeprice - openprice
+        percentchange = nomchange / openprice
+       Else
+        nomchange = 0
+        percentchange = 0
+        End If
+        Range("J" & h + 2).Value = nomchange
+        Range("K" & h + 2).Value = percentchange
+        Range("K" & h + 2).NumberFormat = "0.00%"
+        Range("L" & h + 2).Value = stockvolume
+  'Format percent change column
+If percentchange > 0 Then
+    Range("K" & h + 2).Interior.ColorIndex = 4
+    Else
+    Range("K" & h + 2).Interior.ColorIndex = 3
+   End If
+    
+Next h
+
+
+'For h = 2 To lastrowticker
+ '   stockvolume = 0
+  '  x = 2
+   ' Do While x <= lastrow
+    '   If Not Cells(h, 9).Value = Cells(x, 1).Value Then
+     '       x = x + 1
+      '  ElseIf Cells(x, 2).Value = "20160101" Then
+       '      openprice = Cells(x, 3).Value
+        '     stockvolume = stockvolume + Cells(x, 7).Value
+         '    x = x + 1
+        'ElseIf Cells(x, 2).Value = "20161230" Then
+         '   closeprice = Cells(x, 6).Value
+          '  stockvolume = stockvolume + Cells(x, 7).Value
+           ' x = x + 1
+        'Else
+         '   stockvolume = stockvolume + Cells(x, 7).Value
+          '  x = x + 1
+           ' End If
+    'Loop
+              
+   ' nomchange = closeprice - openprice
+    'percentchange = (nomchange) / openprice
+    'Range("J" & h).Value = nomchange
+    'Range("K" & h).Value = percentchange
+    'Range("K2:K" & h).NumberFormat = "0.00%"
+    'Range("L" & h).Value = stockvolume
+  'Format percent change column
+  'If percentchange > 0 Then
+    'Cells(h, 11).Interior.ColorIndex = 4
+    'ElseIf percentchange < 0 Then
+   ' Cells(h, 11).Interior.ColorIndex = 3
+  ' End If
+    
+'Next h
+     
+'Sort calculated table and get highest values
+
+Columns("I:L").Sort key1:=Range("K2"), _
+    order1:=xlDescending, Header:=xlYes
+highpercent = Range("K2").Value
+highperctick = Range("I2").Value
+
+Columns("I:L").Sort key1:=Range("K2"), _
+    order1:=xlAscending, Header:=xlYes
+lowpercent = Range("K2").Value
+lowperctick = Range("I2").Value
+
+Columns("I:L").Sort key1:=Range("L2"), _
+    order1:=xlDescending, Header:=xlYes
+highvol = Range("L2").Value
+highvoltick = Range("I2").Value
+
+Columns("I:L").Sort key1:=Range("I2"), _
+    order1:=xlAscending, Header:=xlYes
+'Format new table
+Range("O2").Value = "Greatest % Increase"
+Range("O3").Value = "Greatest % Decrease"
+Range("O4").Value = "Greatest Total Volume"
+Range("P1").Value = "Ticker"
+Range("Q1").Value = "Value:"
+
+Range("P2").Value = highperctick
+Range("P3").Value = lowperctick
+Range("P4").Value = highvoltick
+Range("Q2").Value = highpercent
+Range("Q3").Value = lowpercent
+Range("Q4").Value = highvol
+Range("Q2:Q3").NumberFormat = "0.00%"
+
+
+Next ws
+
+Application.ScreenUpdating = True
+    
+'MsgBox "There are " & tickerlist.Count & " stocks tracked"
+
+End Sub
+
